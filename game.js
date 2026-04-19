@@ -1,13 +1,12 @@
 // ========== КОНФИГУРАЦИЯ ==========
 const ORIGINAL_CARD_SIZE = 810;
-const CANVAS_BASE_WIDTH = 900;
-const CANVAS_BASE_HEIGHT = 500;
 
-let currentCardSize = 360;
-let currentCanvasWidth = 900;
+let currentCardSize = 300;
+let currentCanvasWidth = 800;
 let currentCanvasHeight = 500;
-let currentShift = 20;
-let currentGap = 20; // Расстояние между картами
+let currentLeftX = 20;
+let currentRightX = 420;
+let currentY = 70;
 
 // Глобальные переменные
 let cardsDeck = [];
@@ -30,39 +29,46 @@ const loadingDiv = document.getElementById('loading');
 
 // ========== РАСЧЁТ РАЗМЕРОВ ПОД ЭКРАН ==========
 function calculateCanvasSize() {
-    // Получаем доступное пространство
-    const maxWidth = window.innerWidth - 20;
-    const maxHeight = window.innerHeight - 80;
+    // Получаем размер окна
+    const container = canvas.parentElement;
+    const maxWidth = window.innerWidth - 30;
+    const maxHeight = window.innerHeight - 100;
     
-    // Сохраняем пропорции 900:500
-    const ratio = CANVAS_BASE_WIDTH / CANVAS_BASE_HEIGHT;
+    // Канвас занимает почти весь экран
+    currentCanvasWidth = Math.min(maxWidth, 1000);
+    currentCanvasHeight = Math.min(maxHeight, 700);
     
-    let width = maxWidth;
-    let height = width / ratio;
+    // Размер карты - 42% от высоты канваса (для пропорции)
+    currentCardSize = Math.floor(currentCanvasHeight * 0.42);
     
-    if (height > maxHeight) {
-        height = maxHeight;
-        width = height * ratio;
-    }
+    // Ограничиваем максимальный размер
+    if (currentCardSize > 380) currentCardSize = 380;
+    if (currentCardSize < 200) currentCardSize = 200;
     
-    currentCanvasWidth = Math.floor(width);
-    currentCanvasHeight = Math.floor(height);
+    // Расстояние между картами (минимальное)
+    const gap = Math.floor(currentCardSize * 0.1);
     
-    // 🔥 КАРТОЧКИ СТАЛИ КРУПНЕЕ: 55% от ширины канваса (было 38%)
-    currentCardSize = Math.min(Math.floor(currentCanvasWidth * 0.55), 480);
+    // Общая ширина двух карт + промежуток
+    const totalWidth = currentCardSize * 2 + gap;
     
-    // 🔥 РАССТОЯНИЕ МЕЖДУ КАРТАМИ: минимальное (10% от размера карты)
-    currentGap = Math.floor(currentCardSize * 0.08);
+    // Центрируем по горизонтали
+    currentLeftX = Math.floor((currentCanvasWidth - totalWidth) / 2);
+    currentRightX = currentLeftX + currentCardSize + gap;
     
-    // 🔥 ОТСТУП ОТ КРАЯ: автоматический, чтобы карты были по центру
-    const totalWidth = currentCardSize * 2 + currentGap;
-    currentShift = Math.max(10, Math.floor((currentCanvasWidth - totalWidth) / 2));
+    // Центрируем по вертикали
+    currentY = Math.floor((currentCanvasHeight - currentCardSize) / 2);
     
     // Устанавливаем размер канваса
     canvas.width = currentCanvasWidth;
     canvas.height = currentCanvasHeight;
     
-    console.log(`Canvas: ${currentCanvasWidth}x${currentCanvasHeight}, CardSize: ${currentCardSize}, Gap: ${currentGap}, Shift: ${currentShift}`);
+    // Стили канваса - на весь экран
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.style.maxWidth = `${currentCanvasWidth}px`;
+    canvas.style.maxHeight = `${currentCanvasHeight}px`;
+    
+    console.log(`Canvas: ${currentCanvasWidth}x${currentCanvasHeight}, CardSize: ${currentCardSize}, LeftX: ${currentLeftX}, RightX: ${currentRightX}`);
 }
 
 // ========== ТАЙМЕР ==========
@@ -138,7 +144,7 @@ function drawCard(cardId, x, y, displaySize, angle) {
     ctx.translate(-centerX, -centerY);
     
     // Тень
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = 6;
     ctx.shadowColor = 'rgba(0,0,0,0.4)';
     
     // Рисуем картинку
@@ -173,17 +179,8 @@ function draw() {
         const leftCard = places[0];
         const rightCard = places[1];
         
-        const cardWidth = currentCardSize;
-        const cardHeight = currentCardSize;
-        
-        // Левая карта
-        const leftX = currentShift;
-        // Правая карта (рядом с левой)
-        const rightX = currentShift + currentCardSize + currentGap;
-        const y = (currentCanvasHeight - currentCardSize) / 2;
-        
-        drawCard(leftCard.id, leftX, y, cardWidth, leftCard.angle);
-        drawCard(rightCard.id, rightX, y, cardWidth, rightCard.angle);
+        drawCard(leftCard.id, currentLeftX, currentY, currentCardSize, leftCard.angle);
+        drawCard(rightCard.id, currentRightX, currentY, currentCardSize, rightCard.angle);
     }
 }
 
@@ -217,7 +214,7 @@ function getSymbolAtClick(cardId, clickX, clickY, cardX, cardY, displaySize, ang
     const originalX = rotatedX / scale;
     const originalY = rotatedY / scale;
     
-    let minDist = 60; // Увеличен радиус для удобства
+    let minDist = 55;
     let foundSym = null;
     
     for (const [symId, coords] of Object.entries(cardData)) {
@@ -293,7 +290,6 @@ function drawCardFromDeck() {
 function newGame() {
     cardsDeck = Object.keys(allCardsData).map(Number);
     
-    // Перемешиваем
     for (let i = cardsDeck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [cardsDeck[i], cardsDeck[j]] = [cardsDeck[j], cardsDeck[i]];
@@ -366,30 +362,21 @@ function handleClick(e) {
     const canvasX = (clientX - rect.left) * scaleX;
     const canvasY = (clientY - rect.top) * scaleY;
     
-    const cardWidth = currentCardSize;
-    const cardHeight = currentCardSize;
-    
     // Левая карта
-    const leftX = currentShift;
-    // Правая карта
-    const rightX = currentShift + currentCardSize + currentGap;
-    const y = (currentCanvasHeight - currentCardSize) / 2;
-    
-    // Левая карта
-    if (canvasX >= leftX && canvasX <= leftX + cardWidth &&
-        canvasY >= y && canvasY <= y + cardHeight) {
+    if (canvasX >= currentLeftX && canvasX <= currentLeftX + currentCardSize &&
+        canvasY >= currentY && canvasY <= currentY + currentCardSize) {
         const leftCard = places[0];
-        const sym = getSymbolAtClick(leftCard.id, canvasX, canvasY, leftX, y, cardWidth, leftCard.angle);
+        const sym = getSymbolAtClick(leftCard.id, canvasX, canvasY, currentLeftX, currentY, currentCardSize, leftCard.angle);
         if (sym) {
             checkMatch(sym, leftCard.id, places[1].id);
         }
     }
     
     // Правая карта
-    if (canvasX >= rightX && canvasX <= rightX + cardWidth &&
-        canvasY >= y && canvasY <= y + cardHeight) {
+    if (canvasX >= currentRightX && canvasX <= currentRightX + currentCardSize &&
+        canvasY >= currentY && canvasY <= currentY + currentCardSize) {
         const rightCard = places[1];
-        const sym = getSymbolAtClick(rightCard.id, canvasX, canvasY, rightX, y, cardWidth, rightCard.angle);
+        const sym = getSymbolAtClick(rightCard.id, canvasX, canvasY, currentRightX, currentY, currentCardSize, rightCard.angle);
         if (sym) {
             checkMatch(sym, rightCard.id, places[0].id);
         }
