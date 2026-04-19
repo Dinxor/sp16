@@ -36,9 +36,10 @@
             justify-content: center;
             align-items: center;
             position: relative;
+            padding: 10px;
         }
 
-        /* Плавающая верхняя панель со всем управлением */
+        /* Плавающая верхняя панель */
         .top-panel {
             position: fixed;
             top: 12px;
@@ -101,9 +102,18 @@
             background: #533483;
         }
 
+        /* Контейнер для канваса с центрированием */
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+        }
+
         canvas {
             display: block;
-            margin: 0 auto;
             background: #0f3460;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
@@ -113,6 +123,7 @@
             height: auto;
             max-width: 95vw;
             max-height: 85vh;
+            object-fit: contain;
         }
 
         .loading {
@@ -151,7 +162,7 @@
             }
         }
 
-        /* Вертикальная ориентация (телефон) */
+        /* Вертикальная ориентация */
         @media (orientation: portrait) {
             .top-panel {
                 top: 10px;
@@ -171,7 +182,7 @@
             }
         }
 
-        /* Очень маленькие экраны - сжимаем или переносим */
+        /* Очень маленькие экраны */
         @media (max-width: 500px) {
             .top-panel {
                 gap: 4px;
@@ -190,7 +201,7 @@
             }
         }
 
-        /* Очень узкие экраны - разрешаем перенос кнопок */
+        /* Узкие экраны - перенос кнопок */
         @media (max-width: 420px) {
             .top-panel {
                 flex-wrap: wrap;
@@ -204,9 +215,11 @@
 </head>
 <body>
     <div class="game-container">
-        <canvas id="canvas" width="900" height="500"></canvas>
+        <div class="canvas-wrapper">
+            <canvas id="canvas" width="900" height="500"></canvas>
+        </div>
         
-        <!-- Плавающая панель со всем управлением -->
+        <!-- Плавающая панель -->
         <div class="top-panel">
             <div class="status" id="status">🎯 Загрузка...</div>
             <button class="timer-btn" id="pauseBtn">00:00</button>

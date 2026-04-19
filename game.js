@@ -1,9 +1,13 @@
 // ========== КОНФИГУРАЦИЯ ==========
-const ORIGINAL_CARD_SIZE = 810;   // реальный размер карты из mini.json
-const CARD_SIZE = 360;            // отображаемый размер на канвасе
-const CANVAS_WIDTH = 900;
-const CANVAS_HEIGHT = 500;
-const SHIFT = 20;
+const ORIGINAL_CARD_SIZE = 810;
+const CANVAS_BASE_WIDTH = 900;
+const CANVAS_BASE_HEIGHT = 500;
+
+let currentCardSize = 360;
+let currentCanvasWidth = 900;
+let currentCanvasHeight = 500;
+let currentShift = 20;
+let currentGap = 20; // Расстояние между картами
 
 // Глобальные переменные
 let cardsDeck = [];
@@ -23,6 +27,43 @@ const newBtn = document.getElementById('newBtn');
 const cardsCountSpan = document.getElementById('cardsCount');
 const statusDiv = document.getElementById('status');
 const loadingDiv = document.getElementById('loading');
+
+// ========== РАСЧЁТ РАЗМЕРОВ ПОД ЭКРАН ==========
+function calculateCanvasSize() {
+    // Получаем доступное пространство
+    const maxWidth = window.innerWidth - 20;
+    const maxHeight = window.innerHeight - 80;
+    
+    // Сохраняем пропорции 900:500
+    const ratio = CANVAS_BASE_WIDTH / CANVAS_BASE_HEIGHT;
+    
+    let width = maxWidth;
+    let height = width / ratio;
+    
+    if (height > maxHeight) {
+        height = maxHeight;
+        width = height * ratio;
+    }
+    
+    currentCanvasWidth = Math.floor(width);
+    currentCanvasHeight = Math.floor(height);
+    
+    // 🔥 КАРТОЧКИ СТАЛИ КРУПНЕЕ: 55% от ширины канваса (было 38%)
+    currentCardSize = Math.min(Math.floor(currentCanvasWidth * 0.55), 480);
+    
+    // 🔥 РАССТОЯНИЕ МЕЖДУ КАРТАМИ: минимальное (10% от размера карты)
+    currentGap = Math.floor(currentCardSize * 0.08);
+    
+    // 🔥 ОТСТУП ОТ КРАЯ: автоматический, чтобы карты были по центру
+    const totalWidth = currentCardSize * 2 + currentGap;
+    currentShift = Math.max(10, Math.floor((currentCanvasWidth - totalWidth) / 2));
+    
+    // Устанавливаем размер канваса
+    canvas.width = currentCanvasWidth;
+    canvas.height = currentCanvasHeight;
+    
+    console.log(`Canvas: ${currentCanvasWidth}x${currentCanvasHeight}, CardSize: ${currentCardSize}, Gap: ${currentGap}, Shift: ${currentShift}`);
+}
 
 // ========== ТАЙМЕР ==========
 function startTimer() {
@@ -48,14 +89,11 @@ async function loadGameData() {
         const cardIds = Object.keys(allCardsData);
         statusDiv.textContent = `🖼️ Загрузка ${cardIds.length} карточек...`;
         
-        console.log(`Найдено карт в JSON: ${cardIds.length}`); // Отладка
-        
         const imagePromises = cardIds.map(id => {
             return new Promise((resolve, reject) => {
                 const img = new Image();
                 img.onload = () => {
                     cardImages[id] = img;
-                    console.log(`Загружена карта ${id}`);
                     resolve();
                 };
                 img.onerror = () => reject(`Не удалось загрузить images/${id}.jpg`);
@@ -65,10 +103,7 @@ async function loadGameData() {
         
         await Promise.all(imagePromises);
         
-        const loadedCount = Object.keys(cardImages).length;
-        statusDiv.textContent = `✅ Загружено ${loadedCount} карт!`;
-        console.log(`Загружено изображений: ${loadedCount}`);
-        
+        statusDiv.textContent = `✅ Готово!`;
         loadingDiv.style.display = 'none';
         gameState = 'stopped';
         
@@ -90,64 +125,62 @@ function drawCard(cardId, x, y, displaySize, angle) {
     
     const centerX = x + displaySize/2;
     const centerY = y + displaySize/2;
+    const radius = displaySize/2;
     
-    // 1. Создаём круглую маску (обрезку)
+    // Круглая обрезка
     ctx.beginPath();
-    ctx.arc(centerX, centerY, displaySize/2, 0, Math.PI * 2);
-    ctx.clip();  // Всё, что рисуется дальше, будет обрезано по кругу
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.clip();
     
-    // 2. Поворачиваем
+    // Поворот
     ctx.translate(centerX, centerY);
     ctx.rotate(angle * Math.PI / 180);
     ctx.translate(-centerX, -centerY);
     
-    // 3. Тень (немного смещаем, чтобы не обрезалась краями)
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowOffsetX = 3;
-    ctx.shadowOffsetY = 3;
+    // Тень
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
     
-    // 4. Рисуем картинку
+    // Рисуем картинку
     ctx.drawImage(img, x, y, displaySize, displaySize);
     
-    // 5. Сбрасываем тень для рамки
     ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
     
-    // 6. Круглая цветная рамка
+    ctx.restore();
+    
+    // Рамка
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(centerX, centerY, displaySize/2 - 3, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, radius - 3, 0, Math.PI * 2);
     ctx.strokeStyle = '#e94560';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3;
     ctx.stroke();
-    
-    // 7. Внешний белый ободок (опционально, для красоты)
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, displaySize/2 - 1, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
     ctx.restore();
 }
 
 // ========== ОТРИСОВКА ВСЕЙ СЦЕНЫ ==========
 function draw() {
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.clearRect(0, 0, currentCanvasWidth, currentCanvasHeight);
     
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    // Фон с градиентом
+    const gradient = ctx.createLinearGradient(0, 0, currentCanvasWidth, currentCanvasHeight);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, currentCanvasWidth, currentCanvasHeight);
     
     if (places.length >= 2) {
         const leftCard = places[0];
         const rightCard = places[1];
         
-        const cardWidth = CARD_SIZE;
-        const cardHeight = CARD_SIZE;
-        const leftX = SHIFT;
-        const rightX = CANVAS_WIDTH - cardWidth - SHIFT;
-        const y = (CANVAS_HEIGHT - cardHeight) / 2;
+        const cardWidth = currentCardSize;
+        const cardHeight = currentCardSize;
+        
+        // Левая карта
+        const leftX = currentShift;
+        // Правая карта (рядом с левой)
+        const rightX = currentShift + currentCardSize + currentGap;
+        const y = (currentCanvasHeight - currentCardSize) / 2;
         
         drawCard(leftCard.id, leftX, y, cardWidth, leftCard.angle);
         drawCard(rightCard.id, rightX, y, cardWidth, rightCard.angle);
@@ -162,20 +195,17 @@ function findCommonSymbols(cardId1, cardId2) {
     return common;
 }
 
-// ========== ПОЛУЧЕНИЕ СИМВОЛА ПО КООРДИНАТАМ (С УЧЁТОМ МАСШТАБА И ПОВОРОТА) ==========
+// ========== ПОЛУЧЕНИЕ СИМВОЛА ПО КООРДИНАТАМ ==========
 function getSymbolAtClick(cardId, clickX, clickY, cardX, cardY, displaySize, angle) {
     const cardData = allCardsData[cardId];
     if (!cardData) return null;
     
-    // Локальные координаты внутри отображаемой карты
     let localX = clickX - cardX;
     let localY = clickY - cardY;
     
-    // Центр карты
     const centerX = displaySize / 2;
     const centerY = displaySize / 2;
     
-    // Обратный поворот
     const rad = -angle * Math.PI / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -183,26 +213,21 @@ function getSymbolAtClick(cardId, clickX, clickY, cardX, cardY, displaySize, ang
     const rotatedX = centerX + (localX - centerX) * cos - (localY - centerY) * sin;
     const rotatedY = centerY + (localX - centerX) * sin + (localY - centerY) * cos;
     
-    // Масштаб: от оригинального размера к отображаемому (displaySize)
     const scale = displaySize / ORIGINAL_CARD_SIZE;
-    
-    // Переводим координаты в оригинальный размер для сравнения с JSON
     const originalX = rotatedX / scale;
     const originalY = rotatedY / scale;
     
-    let minDist = 55; // радиус в оригинальных пикселях
+    let minDist = 60; // Увеличен радиус для удобства
     let foundSym = null;
     
     for (const [symId, coords] of Object.entries(cardData)) {
         const [origX, origY] = coords;
         const dist = Math.hypot(originalX - origX, originalY - origY);
-        
         if (dist < minDist) {
             minDist = dist;
             foundSym = symId;
         }
     }
-    
     return foundSym;
 }
 
@@ -211,9 +236,14 @@ function checkMatch(clickedSym, clickedCardId, otherCardId) {
     const common = findCommonSymbols(clickedCardId, otherCardId);
     
     if (common.includes(clickedSym)) {
-        statusDiv.textContent = '✅ Правильно! +1 карта';
+        statusDiv.textContent = '✅ Правильно!';
         statusDiv.style.color = '#00ff00';
-        setTimeout(() => { if (gameState === 'started') statusDiv.style.color = '#ffd700'; }, 800);
+        setTimeout(() => { 
+            if (gameState === 'started') {
+                statusDiv.textContent = '🎯 Найди общий символ!';
+                statusDiv.style.color = '#ffd700';
+            }
+        }, 800);
         
         places.shift();
         
@@ -226,12 +256,13 @@ function checkMatch(clickedSym, clickedCardId, otherCardId) {
                     angle: angle,
                     img: cardImages[newCardId]
                 });
-                cardsCountSpan.textContent = `📦 Карт: ${cardsDeck.length}`;
-                statusDiv.textContent = `🎯 Осталось ${cardsDeck.length} карт!`;
+                cardsCountSpan.textContent = `📦 ${cardsDeck.length}`;
+                statusDiv.textContent = `🎯 Осталось ${cardsDeck.length}`;
             }
         } else {
             gameState = 'stopped';
             statusDiv.textContent = '🏆 ПОБЕДА! 🏆';
+            statusDiv.style.color = '#ffd700';
             pauseBtn.style.opacity = '0.6';
             return;
         }
@@ -262,6 +293,7 @@ function drawCardFromDeck() {
 function newGame() {
     cardsDeck = Object.keys(allCardsData).map(Number);
     
+    // Перемешиваем
     for (let i = cardsDeck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [cardsDeck[i], cardsDeck[j]] = [cardsDeck[j], cardsDeck[i]];
@@ -288,7 +320,8 @@ function newGame() {
     gameTime = Math.floor(Date.now() / 1000);
     pauseBtn.textContent = '00:00';
     pauseBtn.style.opacity = '1';
-    cardsCountSpan.textContent = `📦 Карт: ${cardsDeck.length}`;
+    pauseBtn.style.background = '#1a1a2e';
+    cardsCountSpan.textContent = `📦 ${cardsDeck.length}`;
     statusDiv.textContent = '🎯 Найди общий символ!';
     statusDiv.style.color = '#ffd700';
     
@@ -333,11 +366,14 @@ function handleClick(e) {
     const canvasX = (clientX - rect.left) * scaleX;
     const canvasY = (clientY - rect.top) * scaleY;
     
-    const cardWidth = CARD_SIZE;
-    const cardHeight = CARD_SIZE;
-    const leftX = SHIFT;
-    const rightX = CANVAS_WIDTH - cardWidth - SHIFT;
-    const y = (CANVAS_HEIGHT - cardHeight) / 2;
+    const cardWidth = currentCardSize;
+    const cardHeight = currentCardSize;
+    
+    // Левая карта
+    const leftX = currentShift;
+    // Правая карта
+    const rightX = currentShift + currentCardSize + currentGap;
+    const y = (currentCanvasHeight - currentCardSize) / 2;
     
     // Левая карта
     if (canvasX >= leftX && canvasX <= leftX + cardWidth &&
@@ -360,8 +396,16 @@ function handleClick(e) {
     }
 }
 
+// ========== ОБРАБОТКА ПОВОРОТА ЭКРАНА ==========
+function handleResize() {
+    calculateCanvasSize();
+    draw();
+}
+
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 function init() {
+    calculateCanvasSize();
+    
     canvas.addEventListener('click', handleClick);
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
@@ -375,6 +419,9 @@ function init() {
             if (gameState === 'paused') gameState = 'started';
         }
     });
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => setTimeout(handleResize, 100));
     
     startTimer();
     loadGameData();
