@@ -42,7 +42,7 @@ function startTimer() {
 async function loadGameData() {
     try {
         statusDiv.textContent = '📥 Загрузка данных карт...';
-        const jsonResponse = await fetch('sp16/mini.json');
+        const jsonResponse = await fetch('mini.json');
         allCardsData = await jsonResponse.json();
         
         const cardIds = Object.keys(allCardsData);
