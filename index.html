@@ -217,10 +217,10 @@
 
     <div id="loading" class="loading">Загрузка карточек... ⏳</div>
 
-    <script src="game.js"></script>
+    <script src="/sp16/game.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
+            navigator.serviceWorker.register('/sp16/sw.js')
                 .then(reg => console.log('SW registered:', reg))
                 .catch(err => console.log('SW error:', err));
         }

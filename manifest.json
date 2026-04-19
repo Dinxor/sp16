@@ -2,13 +2,13 @@
     "name": "SpotIt - Найди пару",
     "short_name": "SpotIt mini",
     "description": "Найди одинаковый символ на двух карточках!",
-    "start_url": ".",
+    "start_url": "/sp16/",
     "display": "standalone",
     "theme_color": "#1a1a2e",
     "background_color": "#16213e",
     "orientation": "landscape",
     "icons": [
-        {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
-        {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"}
+        {"src": "/sp16/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/sp16/icons/icon-512.png", "sizes": "512x512", "type": "image/png"}
     ]
 }

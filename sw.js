@@ -1,15 +1,15 @@
 const CACHE_NAME = 'spotit-v1';
 const STATIC_FILES = [
-    '.',
-    'index.html',
-    'game.js',
-    'manifest.json',
-    'mini.json',
-    'icon-192.png',
-    'icon-512.png'
+    '/sp16/',
+    '/sp16/index.html',
+    '/sp16/game.js',
+    '/sp16/manifest.json',
+    '/sp16/mini.json',
+    '/sp16/icons/icon-192.png',
+    '/sp16/icons/icon-512.png'
 ];
 // Генерируем пути к 16 картинкам
-const IMAGE_FILES = Array.from({length: 16}, (_, i) => `images/${i}.jpg`);
+const IMAGE_FILES = Array.from({length: 16}, (_, i) => `sp16/images/${i}.jpg`);
 
 const ALL_FILES = [...STATIC_FILES, ...IMAGE_FILES];
 
