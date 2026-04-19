@@ -31,21 +31,21 @@ const loadingDiv = document.getElementById('loading');
 function calculateCanvasSize() {
     // Получаем размеры экрана
     const maxWidth = window.innerWidth - 20;
-    const maxHeight = window.innerHeight - 120; // Отступ для панели сверху
+    const maxHeight = window.innerHeight - 70; // Отступ для панели сверху
     
     // Канвас занимает почти весь экран
     currentCanvasWidth = maxWidth;
     currentCanvasHeight = maxHeight;
     
-    // 🔥 КАРТЫ КРУПНЫЕ: 45% от высоты экрана
-    currentCardSize = Math.floor(currentCanvasHeight * 0.45);
+    // 🔥 КАРТЫ ЗАНИМАЮТ 85% ВЫСОТЫ (почти всё пространство)
+    currentCardSize = Math.floor(currentCanvasHeight * 0.85);
     
-    // Ограничиваем размер
-    if (currentCardSize > 400) currentCardSize = 400;
-    if (currentCardSize < 220) currentCardSize = 220;
+    // Ограничиваем максимальный размер
+    if (currentCardSize > 500) currentCardSize = 500;
+    if (currentCardSize < 200) currentCardSize = 200;
     
-    // 🔥 МИНИМАЛЬНОЕ РАССТОЯНИЕ МЕЖДУ КАРТАМИ (всего 8% от размера карты)
-    const gap = Math.floor(currentCardSize * 0.08);
+    // 🔥 МИНИМАЛЬНОЕ РАССТОЯНИЕ МЕЖДУ КАРТАМИ (5%)
+    const gap = Math.floor(currentCardSize * 0.05);
     
     // Общая ширина двух карт + промежуток
     const totalWidth = currentCardSize * 2 + gap;
@@ -54,19 +54,19 @@ function calculateCanvasSize() {
     currentLeftX = Math.floor((currentCanvasWidth - totalWidth) / 2);
     currentRightX = currentLeftX + currentCardSize + gap;
     
-    // Центрируем по вертикали
+    // 🔥 ПО ВЕРТИКАЛИ: центрируем (равные отступы сверху и снизу)
     currentY = Math.floor((currentCanvasHeight - currentCardSize) / 2);
     
     // Устанавливаем размер канваса
     canvas.width = currentCanvasWidth;
     canvas.height = currentCanvasHeight;
     
-    // CSS стили - канвас на весь экран
+    // CSS стили
     canvas.style.width = '100%';
     canvas.style.height = 'auto';
     canvas.style.maxWidth = `${currentCanvasWidth}px`;
     
-    console.log(`Canvas: ${currentCanvasWidth}x${currentCanvasHeight}, CardSize: ${currentCardSize}, Gap: ${gap}px`);
+    console.log(`Canvas: ${currentCanvasWidth}x${currentCanvasHeight}, CardSize: ${currentCardSize}, Gap: ${gap}px, Y: ${currentY}`);
 }
 
 // ========== ТАЙМЕР ==========
@@ -212,7 +212,7 @@ function getSymbolAtClick(cardId, clickX, clickY, cardX, cardY, displaySize, ang
     const originalX = rotatedX / scale;
     const originalY = rotatedY / scale;
     
-    let minDist = 60;
+    let minDist = 65; // Увеличен радиус для удобства
     let foundSym = null;
     
     for (const [symId, coords] of Object.entries(cardData)) {
