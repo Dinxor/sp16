@@ -29,24 +29,23 @@ const loadingDiv = document.getElementById('loading');
 
 // ========== РАСЧЁТ РАЗМЕРОВ ПОД ЭКРАН ==========
 function calculateCanvasSize() {
-    // Получаем размер окна
-    const container = canvas.parentElement;
-    const maxWidth = window.innerWidth - 30;
-    const maxHeight = window.innerHeight - 100;
+    // Получаем размеры экрана
+    const maxWidth = window.innerWidth - 20;
+    const maxHeight = window.innerHeight - 120; // Отступ для панели сверху
     
     // Канвас занимает почти весь экран
-    currentCanvasWidth = Math.min(maxWidth, 1000);
-    currentCanvasHeight = Math.min(maxHeight, 700);
+    currentCanvasWidth = maxWidth;
+    currentCanvasHeight = maxHeight;
     
-    // Размер карты - 42% от высоты канваса (для пропорции)
-    currentCardSize = Math.floor(currentCanvasHeight * 0.42);
+    // 🔥 КАРТЫ КРУПНЫЕ: 45% от высоты экрана
+    currentCardSize = Math.floor(currentCanvasHeight * 0.45);
     
-    // Ограничиваем максимальный размер
-    if (currentCardSize > 380) currentCardSize = 380;
-    if (currentCardSize < 200) currentCardSize = 200;
+    // Ограничиваем размер
+    if (currentCardSize > 400) currentCardSize = 400;
+    if (currentCardSize < 220) currentCardSize = 220;
     
-    // Расстояние между картами (минимальное)
-    const gap = Math.floor(currentCardSize * 0.1);
+    // 🔥 МИНИМАЛЬНОЕ РАССТОЯНИЕ МЕЖДУ КАРТАМИ (всего 8% от размера карты)
+    const gap = Math.floor(currentCardSize * 0.08);
     
     // Общая ширина двух карт + промежуток
     const totalWidth = currentCardSize * 2 + gap;
@@ -62,13 +61,12 @@ function calculateCanvasSize() {
     canvas.width = currentCanvasWidth;
     canvas.height = currentCanvasHeight;
     
-    // Стили канваса - на весь экран
+    // CSS стили - канвас на весь экран
     canvas.style.width = '100%';
     canvas.style.height = 'auto';
     canvas.style.maxWidth = `${currentCanvasWidth}px`;
-    canvas.style.maxHeight = `${currentCanvasHeight}px`;
     
-    console.log(`Canvas: ${currentCanvasWidth}x${currentCanvasHeight}, CardSize: ${currentCardSize}, LeftX: ${currentLeftX}, RightX: ${currentRightX}`);
+    console.log(`Canvas: ${currentCanvasWidth}x${currentCanvasHeight}, CardSize: ${currentCardSize}, Gap: ${gap}px`);
 }
 
 // ========== ТАЙМЕР ==========
@@ -122,7 +120,7 @@ async function loadGameData() {
     }
 }
 
-// ========== ОТРИСОВКА КАРТЫ С КРУГЛОЙ МАСКОЙ ==========
+// ========== ОТРИСОВКА КАРТЫ ==========
 function drawCard(cardId, x, y, displaySize, angle) {
     const img = cardImages[cardId];
     if (!img) return;
@@ -214,7 +212,7 @@ function getSymbolAtClick(cardId, clickX, clickY, cardX, cardY, displaySize, ang
     const originalX = rotatedX / scale;
     const originalY = rotatedY / scale;
     
-    let minDist = 55;
+    let minDist = 60;
     let foundSym = null;
     
     for (const [symId, coords] of Object.entries(cardData)) {
@@ -385,8 +383,10 @@ function handleClick(e) {
 
 // ========== ОБРАБОТКА ПОВОРОТА ЭКРАНА ==========
 function handleResize() {
-    calculateCanvasSize();
-    draw();
+    setTimeout(() => {
+        calculateCanvasSize();
+        draw();
+    }, 50);
 }
 
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
@@ -408,7 +408,7 @@ function init() {
     });
     
     window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', () => setTimeout(handleResize, 100));
+    window.addEventListener('orientationchange', handleResize);
     
     startTimer();
     loadGameData();
