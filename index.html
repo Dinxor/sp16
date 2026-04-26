@@ -233,8 +233,22 @@
     <script src="/sp16/game.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sp16/sw.js')
-                .then(reg => console.log('SW registered:', reg))
+            // Use absolute scope-aware URL because the app is hosted under /sp16/
+            navigator.serviceWorker.register('/sp16/sw.js', { scope: '/sp16/' })
+                .then(reg => {
+                    console.log('SW registered:', reg);
+                    // Ensure the new SW takes control without requiring a manual reload
+                    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    reg.addEventListener('updatefound', () => {
+                        const sw = reg.installing;
+                        if (!sw) return;
+                        sw.addEventListener('statechange', () => {
+                            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                                sw.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        });
+                    });
+                })
                 .catch(err => console.log('SW error:', err));
         }
     </script>
